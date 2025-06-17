@@ -7,6 +7,7 @@ import os
 import math
 import time
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.utils import clip_grad_norm_
 from contextlib import nullcontext
@@ -153,7 +154,7 @@ def main(cfg: DictConfig) -> None:
     )
     
     # Create GradScaler for mixed precision
-    scaler = torch.cuda.amp.GradScaler() if cfg.system.mixed_precision else None
+    scaler = torch.amp.GradScaler('cuda') if cfg.system.mixed_precision else None
     
     # Resume from checkpoint if specified
     start_step = 0

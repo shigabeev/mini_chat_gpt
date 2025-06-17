@@ -6,6 +6,7 @@ import os
 import pickle
 import requests
 import torch
+import torch.nn as nn
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
 from typing import List, Tuple, Optional
@@ -19,12 +20,7 @@ class TinyStoriesDataset(Dataset):
         self.seq_len = seq_len
         self.train = train
         
-        # Use GPT-2 tokenizer (cl100k_base for better vocab efficiency)
-        try:
-            self.tokenizer = tiktoken.get_encoding("cl100k_base")
-        except:
-            # Fallback to gpt2
-            self.tokenizer = tiktoken.get_encoding("gpt2")
+        self.tokenizer = tiktoken.get_encoding("gpt2")
         
         self.vocab_size = self.tokenizer.n_vocab
         
@@ -32,11 +28,11 @@ class TinyStoriesDataset(Dataset):
         self.data_file = self._prepare_data(data_path, train)
         
         # Memory-map the tokenized data
-        self.data = np.memmap(self.data_file, dtype=np.uint16, mode='r')
+        self.data = np.memmap(self.data_file, dtype=np.uint32, mode='r')
         print(f"Loaded {len(self.data):,} tokens from {self.data_file}")
     
     def _prepare_data(self, data_path: str, train: bool) -> str:
-        """Download and tokenize TinyStories data if needed."""
+        """Prepare and tokenize TinyStories data from local files."""
         split = "train" if train else "val"
         tokens_file = os.path.join(data_path, f"tinystories_{split}.bin")
         
@@ -46,42 +42,40 @@ class TinyStoriesDataset(Dataset):
         # Create data directory
         os.makedirs(data_path, exist_ok=True)
         
-        # Download URLs
-        urls = {
-            "train": "https://huggingface.co/datasets/roneneldan/TinyStories/resolve/main/TinyStories-train.txt",
-            "val": "https://huggingface.co/datasets/roneneldan/TinyStories/resolve/main/TinyStories-valid.txt"
-        }
+        # Use local files instead of downloading
+        if train:
+            txt_file = "TinyStories/TinyStoriesV2-GPT4-train.txt"
+        else:
+            txt_file = "TinyStories/TinyStoriesV2-GPT4-valid.txt"
         
-        txt_file = os.path.join(data_path, f"tinystories_{split}.txt")
-        
-        # Download if needed
         if not os.path.exists(txt_file):
-            print(f"Downloading TinyStories {split} data...")
-            response = requests.get(urls[split])
-            response.raise_for_status()
-            
-            with open(txt_file, 'w', encoding='utf-8') as f:
-                f.write(response.text)
-            print(f"Downloaded to {txt_file}")
+            raise FileNotFoundError(f"Local file {txt_file} not found. Please ensure TinyStories files are in the TinyStories/ directory.")
         
         # Tokenize
         print(f"Tokenizing {txt_file}...")
         with open(txt_file, 'r', encoding='utf-8') as f:
             text = f.read()
         
-        # Add special tokens for story boundaries
-        stories = text.split('\n\n')  # Stories are separated by double newlines
+        # Split by <|endoftext|> tokens (the actual separator used in TinyStories)
+        stories = text.split('<|endoftext|>')
         stories = [story.strip() for story in stories if story.strip()]
         
-        # Tokenize each story and add EOS tokens
+        # Tokenize each story and add endoftext tokens
         all_tokens = []
         for story in stories:
-            tokens = self.tokenizer.encode(story)
-            all_tokens.extend(tokens)
-            all_tokens.append(self.tokenizer.eot_token)  # End of story token
+            if story.strip():  # Only process non-empty stories
+                tokens = self.tokenizer.encode(story.strip())
+                all_tokens.extend(tokens)
+                # Add the endoftext token ID (this is usually token 50256 for GPT models)
+                try:
+                    eot_token = self.tokenizer.encode('<|endoftext|>')[0]
+                    all_tokens.append(eot_token)
+                except:
+                    # Fallback if encoding fails
+                    all_tokens.append(50256)  # Standard GPT endoftext token
         
         # Convert to numpy array and save
-        tokens_np = np.array(all_tokens, dtype=np.uint16)
+        tokens_np = np.array(all_tokens, dtype=np.uint32)
         tokens_np.tofile(tokens_file)
         
         print(f"Tokenized {len(stories):,} stories into {len(tokens_np):,} tokens")
@@ -147,8 +141,14 @@ def get_batch(dataloader, device: str) -> Tuple[torch.Tensor, torch.Tensor]:
 
 
 if __name__ == "__main__":
-    # Test the dataloader
+    # Test the dataloader with local TinyStories files
     data_path = "./TinyStories/data"
+    
+    print("Testing TinyStories dataloader...")
+    print("=" * 50)
+    
+    # Test training dataloader
+    print("\n1. Testing training dataloader...")
     train_loader, vocab_size = create_dataloader(data_path, batch_size=4, seq_len=256, train=True)
     
     print(f"Vocab size: {vocab_size}")
@@ -156,5 +156,51 @@ if __name__ == "__main__":
     
     # Test batch
     x, y = next(iter(train_loader))
-    print(f"Batch shape: {x.shape}, {y.shape}")
-    print(f"Sample tokens: {x[0, :10].tolist()}") 
+    print(f"Training batch shape: {x.shape}, {y.shape}")
+    print(f"Sample training tokens: {x[0, :10].tolist()}")
+    
+    # Test validation dataloader
+    print("\n2. Testing validation dataloader...")
+    val_loader, _ = create_dataloader(data_path, batch_size=4, seq_len=256, train=False)
+    
+    print(f"Validation dataset length: {len(val_loader.dataset)}")
+    
+    # Test validation batch
+    x_val, y_val = next(iter(val_loader))
+    print(f"Validation batch shape: {x_val.shape}, {y_val.shape}")
+    print(f"Sample validation tokens: {x_val[0, :10].tolist()}")
+    
+    # Test that input and target are properly offset
+    print(f"\n3. Testing input/target offset...")
+    print(f"First input token: {x[0, 0].item()}")
+    print(f"First target token: {y[0, 0].item()}")
+    print(f"Second input token: {x[0, 1].item()}")
+    print(f"Are they shifted correctly? {x[0, 1].item() == y[0, 0].item()}")
+    
+    # Test InfiniteDataLoader with smaller dataset for speed
+    print(f"\n4. Testing InfiniteDataLoader...")
+    
+    # Create a tiny dataset for quick testing
+    tiny_data_path = "./TinyStories/tiny_test_data"
+    os.makedirs(tiny_data_path, exist_ok=True)
+    
+    # Create small test data (just 200 tokens)
+    tiny_tokens = np.arange(200, dtype=np.uint32)
+    tiny_tokens.tofile(os.path.join(tiny_data_path, "tinystories_train.bin"))
+    
+    # Create small dataloader
+    tiny_loader, _ = create_dataloader(tiny_data_path, batch_size=2, seq_len=16, train=True, num_workers=0)
+    
+    infinite_loader = InfiniteDataLoader(tiny_loader)
+    batch1 = next(infinite_loader)
+    batch2 = next(infinite_loader)
+    print(f"Infinite loader batch 1 shape: {batch1[0].shape}")
+    print(f"Infinite loader batch 2 shape: {batch2[0].shape}")
+    
+    # Test cycling through multiple epochs quickly
+    for i in range(5):
+        next(infinite_loader)
+    print(f"Successfully cycled through multiple epochs")
+    
+    print("\n" + "=" * 50)
+    print("All tests completed successfully!") 

@@ -211,7 +211,7 @@ class GPT(nn.Module):
             torch.nn.init.zeros_(module.bias)
             torch.nn.init.ones_(module.weight)
     
-    def forward(self, idx: torch.Tensor, targets: Optional[torch.Tensor] = None) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+    def forward(self, idx: torch.Tensor, targets: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         B, T = idx.shape
         assert T <= self.max_seq_len, f"Sequence length {T} exceeds maximum {self.max_seq_len}"
         
@@ -239,7 +239,7 @@ class GPT(nn.Module):
                 loss = loss.mean()
             return logits, loss
         else:
-            return logits
+            return logits, None
     
     @torch.no_grad()
     def generate(self, idx: torch.Tensor, max_new_tokens: int, temperature: float = 1.0, top_k: Optional[int] = None) -> torch.Tensor:

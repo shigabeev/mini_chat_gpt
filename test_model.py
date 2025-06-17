@@ -741,11 +741,7 @@ class TestModelSerialization:
         from generate import load_model
         import tiktoken
         
-        # Use tiktoken vocabulary size for compatibility
-        try:
-            tokenizer = tiktoken.get_encoding("cl100k_base")
-        except:
-            tokenizer = tiktoken.get_encoding("gpt2")
+        tokenizer = tiktoken.get_encoding("gpt2")
         
         vocab_size = tokenizer.n_vocab
         model = create_model(vocab_size).to(DEVICE)
@@ -801,9 +797,10 @@ class TestMultiGPUCompatibility:
         
         # Test forward pass
         x = torch.randint(0, vocab_size, (4, 16)).to(DEVICE)
-        logits = model_parallel(x)  # Without targets, only returns logits
+        logits, loss = model_parallel(x)  # Returns logits and None when no targets
         
         assert logits.shape == (4, 16, vocab_size)
+        assert loss is None
         assert logits.device.type == "cuda"
     
     def test_dataparallel_model_parameters_access(self):
@@ -917,8 +914,12 @@ class TestMultiGPUCompatibility:
         model2_parallel.eval()
         
         with torch.no_grad():
-            logits1 = model1(x)  # Without targets, only returns logits
-            logits2 = model2_parallel(x)  # Without targets, only returns logits
+            logits1, loss1 = model1(x)  # Returns logits and None when no targets
+            logits2, loss2 = model2_parallel(x)  # Returns logits and None when no targets
+        
+        # Verify losses are None
+        assert loss1 is None
+        assert loss2 is None
         
         # Results should be very close (some minor differences due to parallel execution)
         # Use relaxed tolerances for DataParallel due to floating point precision differences

@@ -25,11 +25,7 @@ def load_model(checkpoint_path: str, device: str = "cuda") -> tuple[GPT, tiktoke
     model.to(device)
     model.eval()
     
-    # Load tokenizer
-    try:
-        tokenizer = tiktoken.get_encoding("cl100k_base")
-    except:
-        tokenizer = tiktoken.get_encoding("gpt2")
+    tokenizer = tiktoken.get_encoding("gpt2")
     
     return model, tokenizer
 

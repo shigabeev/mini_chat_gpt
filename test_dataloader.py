@@ -23,7 +23,7 @@ class TestTinyStoriesDataset:
         
         # Create mock tokenized data
         os.makedirs(tmp_path / "data", exist_ok=True)
-        tokens = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10] * 100, dtype=np.uint16)
+        tokens = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10] * 100, dtype=np.uint32)
         tokens.tofile(tmp_path / "data" / "tinystories_train.bin")
         
         dataset = TinyStoriesDataset(str(tmp_path / "data"), seq_len=32, train=True)
@@ -37,7 +37,7 @@ class TestTinyStoriesDataset:
         """Test dataset item retrieval."""
         # Create test data
         os.makedirs(tmp_path / "data", exist_ok=True)
-        tokens = np.arange(100, dtype=np.uint16)
+        tokens = np.arange(100, dtype=np.uint32)
         tokens.tofile(tmp_path / "data" / "tinystories_train.bin")
         
         dataset = TinyStoriesDataset(str(tmp_path / "data"), seq_len=10, train=True)
@@ -52,7 +52,7 @@ class TestTinyStoriesDataset:
     def test_dataset_length(self, tmp_path):
         """Test dataset length calculation."""
         os.makedirs(tmp_path / "data", exist_ok=True)
-        tokens = np.arange(100, dtype=np.uint16)
+        tokens = np.arange(100, dtype=np.uint32)
         tokens.tofile(tmp_path / "data" / "tinystories_train.bin")
         
         dataset = TinyStoriesDataset(str(tmp_path / "data"), seq_len=10, train=True)
@@ -63,7 +63,7 @@ class TestTinyStoriesDataset:
     def test_dataset_boundaries(self, tmp_path):
         """Test dataset boundary conditions."""
         os.makedirs(tmp_path / "data", exist_ok=True)
-        tokens = np.arange(50, dtype=np.uint16)
+        tokens = np.arange(50, dtype=np.uint32)
         tokens.tofile(tmp_path / "data" / "tinystories_train.bin")
         
         dataset = TinyStoriesDataset(str(tmp_path / "data"), seq_len=10, train=True)
@@ -84,8 +84,8 @@ class TestTinyStoriesDataset:
         os.makedirs(tmp_path / "data", exist_ok=True)
         
         # Create different data for train and val
-        train_tokens = np.arange(100, dtype=np.uint16)
-        val_tokens = np.arange(100, 200, dtype=np.uint16)
+        train_tokens = np.arange(100, dtype=np.uint32)
+        val_tokens = np.arange(100, 200, dtype=np.uint32)
         
         train_tokens.tofile(tmp_path / "data" / "tinystories_train.bin")
         val_tokens.tofile(tmp_path / "data" / "tinystories_val.bin")
@@ -108,7 +108,7 @@ class TestDataLoaderCreation:
         """Test basic dataloader creation."""
         # Setup test data
         os.makedirs(tmp_path / "data", exist_ok=True)
-        tokens = np.arange(1000, dtype=np.uint16)
+        tokens = np.arange(1000, dtype=np.uint32)
         tokens.tofile(tmp_path / "data" / "tinystories_train.bin")
         
         dataloader, vocab_size = create_dataloader(
@@ -127,7 +127,7 @@ class TestDataLoaderCreation:
     def test_dataloader_batch_shape(self, tmp_path):
         """Test that dataloader produces correct batch shapes."""
         os.makedirs(tmp_path / "data", exist_ok=True)
-        tokens = np.arange(1000, dtype=np.uint16)
+        tokens = np.arange(1000, dtype=np.uint32)
         tokens.tofile(tmp_path / "data" / "tinystories_train.bin")
         
         dataloader, _ = create_dataloader(
@@ -148,7 +148,7 @@ class TestDataLoaderCreation:
     def test_dataloader_shuffle_behavior(self, tmp_path):
         """Test shuffle behavior for train vs val."""
         os.makedirs(tmp_path / "data", exist_ok=True)
-        tokens = np.arange(1000, dtype=np.uint16)
+        tokens = np.arange(1000, dtype=np.uint32)
         tokens.tofile(tmp_path / "data" / "tinystories_train.bin")
         tokens.tofile(tmp_path / "data" / "tinystories_val.bin")
         
@@ -167,7 +167,7 @@ class TestDataLoaderCreation:
     def test_dataloader_consistency(self, tmp_path):
         """Test that same data produces consistent results."""
         os.makedirs(tmp_path / "data", exist_ok=True)
-        tokens = np.arange(1000, dtype=np.uint16)
+        tokens = np.arange(1000, dtype=np.uint32)
         tokens.tofile(tmp_path / "data" / "tinystories_val.bin")  # Use val for no shuffle
         
         dataloader1, _ = create_dataloader(
@@ -190,7 +190,7 @@ class TestInfiniteDataLoader:
     def test_infinite_iteration(self, tmp_path):
         """Test that infinite dataloader cycles properly."""
         os.makedirs(tmp_path / "data", exist_ok=True)
-        tokens = np.arange(50, dtype=np.uint16)  # Very small dataset for quick cycling
+        tokens = np.arange(50, dtype=np.uint32)  # Very small dataset for quick cycling
         tokens.tofile(tmp_path / "data" / "tinystories_train.bin")
         
         dataloader, _ = create_dataloader(
@@ -224,7 +224,7 @@ class TestInfiniteDataLoader:
     def test_infinite_next_method(self, tmp_path):
         """Test the __next__ method directly."""
         os.makedirs(tmp_path / "data", exist_ok=True)
-        tokens = np.arange(100, dtype=np.uint16)
+        tokens = np.arange(100, dtype=np.uint32)
         tokens.tofile(tmp_path / "data" / "tinystories_val.bin")
         
         dataloader, _ = create_dataloader(
@@ -251,7 +251,7 @@ class TestBatchFunction:
     def test_get_batch_device_transfer(self, tmp_path):
         """Test that get_batch moves tensors to correct device."""
         os.makedirs(tmp_path / "data", exist_ok=True)
-        tokens = np.arange(200, dtype=np.uint16)
+        tokens = np.arange(200, dtype=np.uint32)
         tokens.tofile(tmp_path / "data" / "tinystories_train.bin")
         
         dataloader, _ = create_dataloader(
@@ -274,7 +274,7 @@ class TestBatchFunction:
     def test_get_batch_shape_preservation(self, tmp_path):
         """Test that get_batch preserves tensor shapes."""
         os.makedirs(tmp_path / "data", exist_ok=True)
-        tokens = np.arange(500, dtype=np.uint16)
+        tokens = np.arange(500, dtype=np.uint32)
         tokens.tofile(tmp_path / "data" / "tinystories_train.bin")
         
         dataloader, _ = create_dataloader(
@@ -298,7 +298,7 @@ class TestMultiGPUCompatibility:
         
         # Setup test data
         os.makedirs(tmp_path / "data", exist_ok=True)
-        tokens = np.arange(1000, dtype=np.uint16)
+        tokens = np.arange(1000, dtype=np.uint32)
         tokens.tofile(tmp_path / "data" / "tinystories_train.bin")
         
         from model import create_model
@@ -328,7 +328,7 @@ class TestMultiGPUCompatibility:
             pytest.skip("Multi-GPU tests require at least 2 GPUs")
         
         os.makedirs(tmp_path / "data", exist_ok=True)
-        tokens = np.arange(2000, dtype=np.uint16)
+        tokens = np.arange(2000, dtype=np.uint32)
         tokens.tofile(tmp_path / "data" / "tinystories_train.bin")
         
         from model import create_model
@@ -364,7 +364,7 @@ class TestMultiGPUCompatibility:
             pytest.skip("CUDA tests require GPU")
         
         os.makedirs(tmp_path / "data", exist_ok=True)
-        tokens = np.arange(5000, dtype=np.uint16)
+        tokens = np.arange(5000, dtype=np.uint32)
         tokens.tofile(tmp_path / "data" / "tinystories_train.bin")
         
         # Test with pin_memory for efficiency
@@ -398,7 +398,7 @@ class TestMultiGPUCompatibility:
     def test_dataloader_with_different_batch_sizes(self, tmp_path):
         """Test dataloader with various batch sizes for multi-GPU scenarios."""
         os.makedirs(tmp_path / "data", exist_ok=True)
-        tokens = np.arange(3000, dtype=np.uint16)
+        tokens = np.arange(3000, dtype=np.uint32)
         tokens.tofile(tmp_path / "data" / "tinystories_train.bin")
         
         # Test different batch sizes that are common in multi-GPU setups
@@ -426,7 +426,7 @@ class TestDataLoaderIntegration:
     def test_training_loop_simulation(self, tmp_path):
         """Test dataloader in a simulated training loop."""
         os.makedirs(tmp_path / "data", exist_ok=True)
-        tokens = np.arange(1000, dtype=np.uint16)
+        tokens = np.arange(1000, dtype=np.uint32)
         tokens.tofile(tmp_path / "data" / "tinystories_train.bin")
         
         dataloader, vocab_size = create_dataloader(
@@ -461,7 +461,7 @@ class TestDataLoaderIntegration:
     def test_dataloader_deterministic_behavior(self, tmp_path):
         """Test deterministic behavior for reproducible training."""
         os.makedirs(tmp_path / "data", exist_ok=True)
-        tokens = np.arange(500, dtype=np.uint16)
+        tokens = np.arange(500, dtype=np.uint32)
         tokens.tofile(tmp_path / "data" / "tinystories_val.bin")  # Use val for deterministic
         
         # Set seed for reproducibility
