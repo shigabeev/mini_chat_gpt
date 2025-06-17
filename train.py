@@ -130,6 +130,15 @@ def main(cfg: DictConfig) -> None:
     
     print(f"Model parameters: {model.get_num_params():,}")
     
+    # Compile model if requested (before DataParallel wrapping)
+    if cfg.system.compile and hasattr(torch, 'compile'):
+        if cfg.system.multi_gpu and torch.cuda.device_count() > 1:
+            print("Warning: torch.compile with DataParallel can be unstable. Consider using single GPU or DistributedDataParallel.")
+            print("Disabling compilation for multi-GPU training.")
+        else:
+            print("Compiling model...")
+            model = torch.compile(model)
+    
     # Multi-GPU support
     if cfg.system.multi_gpu and torch.cuda.device_count() > 1:
         print(f"Using {torch.cuda.device_count()} GPUs")
@@ -139,11 +148,6 @@ def main(cfg: DictConfig) -> None:
         print(f"Effective batch size: {effective_batch_size}")
     else:
         print("Using single GPU")
-    
-    # Compile model if requested (after DataParallel wrapping)
-    if cfg.system.compile and hasattr(torch, 'compile'):
-        print("Compiling model...")
-        model = torch.compile(model)
     
     # Create optimizer
     optimizer = torch.optim.AdamW(
@@ -165,6 +169,15 @@ def main(cfg: DictConfig) -> None:
     model.train()
     best_val_loss = float('inf')
     
+    # Calculate tokens per batch for throughput calculation
+    tokens_per_batch = cfg.training.batch_size * cfg.data.seq_len
+    if cfg.system.multi_gpu and torch.cuda.device_count() > 1:
+        tokens_per_batch *= torch.cuda.device_count()
+    
+    # For tracking average throughput
+    tokens_processed = 0
+    time_elapsed = 0.0
+    
     for step in range(start_step, cfg.training.max_steps):
         t0 = time.time()
         
@@ -181,6 +194,10 @@ def main(cfg: DictConfig) -> None:
         
         with autocast_ctx:
             logits, loss = model(x, y)
+        
+        # Ensure loss is scalar for DataParallel
+        if loss.dim() > 0:
+            loss = loss.mean()
         
         # Backward pass
         if scaler is not None:
@@ -199,20 +216,30 @@ def main(cfg: DictConfig) -> None:
         t1 = time.time()
         dt = t1 - t0
         
+        # Calculate tokens per second
+        tokens_per_second = tokens_per_batch / dt
+        
+        # Update running averages
+        tokens_processed += tokens_per_batch
+        time_elapsed += dt
+        avg_tokens_per_second = tokens_processed / time_elapsed if time_elapsed > 0 else 0
+        
         # Logging
         if step % 100 == 0:
-            print(f"Step {step:6d} | Loss: {loss.item():.4f} | LR: {lr:.2e} | Time: {dt*1000:.2f}ms")
+            print(f"Step {step:6d} | Loss: {loss.item():.4f} | LR: {lr:.2e} | Time: {dt*1000:.2f}ms | Tokens/sec: {tokens_per_second:.0f} (avg: {avg_tokens_per_second:.0f})")
         
         # Evaluation
         if step % cfg.training.eval_interval == 0 and step > 0:
             val_loss = estimate_loss(model, val_loader, device)
-            print(f"Step {step:6d} | Train Loss: {loss.item():.4f} | Val Loss: {val_loss:.4f}")
+            print(f"Step {step:6d} | Train Loss: {loss.item():.4f} | Val Loss: {val_loss:.4f} | Tokens/sec: {tokens_per_second:.0f} (avg: {avg_tokens_per_second:.0f})")
             
             if cfg.wandb.enabled:
                 wandb.log({
                     "train/loss": loss.item(),
                     "val/loss": val_loss,
                     "train/lr": lr,
+                    "train/tokens_per_second": tokens_per_second,
+                    "train/avg_tokens_per_second": avg_tokens_per_second,
                     "step": step,
                 })
             
@@ -230,6 +257,8 @@ def main(cfg: DictConfig) -> None:
             wandb.log({
                 "train/loss": loss.item(),
                 "train/lr": lr,
+                "train/tokens_per_second": tokens_per_second,
+                "train/avg_tokens_per_second": avg_tokens_per_second,
                 "step": step,
             })
     
@@ -240,3 +269,4 @@ def main(cfg: DictConfig) -> None:
 
 if __name__ == "__main__":
     main() 
+    

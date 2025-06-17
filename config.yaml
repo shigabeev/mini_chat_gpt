@@ -14,9 +14,9 @@ training:
   beta2: 0.95
   grad_clip: 1.0
   warmup_steps: 2000
-  max_steps: 50
+  max_steps: 100000
   eval_interval: 1000
-  save_interval: 5000
+  save_interval: 1000
   
 data:
   data_path: "./TinyStories/data"
@@ -31,7 +31,7 @@ system:
   seed: 42
   
 checkpointing:
-  save_dir: "./checkpoints"
+  save_dir: " /media/beijing/checkpoints/mini_chat_gpt/pt"
   resume_from: null  # Path to checkpoint to resume from
 
 wandb:

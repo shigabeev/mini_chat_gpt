@@ -317,7 +317,7 @@ class TestMultiGPUCompatibility:
         
         model_parallel.eval()
         with torch.no_grad():
-            logits = model_parallel(x)
+            logits, _ = model_parallel(x)  # Model returns (logits, loss)
         
         assert logits.shape == (8, 32, vocab_size)
         assert logits.device.type == "cuda"
