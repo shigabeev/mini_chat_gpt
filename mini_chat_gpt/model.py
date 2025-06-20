@@ -231,7 +231,7 @@ class GPT(nn.Module):
             loss = F.cross_entropy(
                 logits.view(-1, logits.size(-1)), 
                 targets.view(-1), 
-                ignore_index=-1, 
+                ignore_index=-100, 
                 reduction='mean'
             )
             # Ensure loss is always a scalar by taking mean if it's not

@@ -1,0 +1,49 @@
+# SFT Configuration for TinyStories-Instruct
+# Supervised Fine-Tuning with chat format and loss masking
+
+# SFT-specific settings
+sft:
+  pretrained_checkpoint: "/media/beijing/checkpoints/mini_chat_gpt/pt/checkpoint_step_100000.pt"  # Path to your pretrained model
+  dataset_path: "./TinyStories"  # Path to TinyStories-Instruct files
+  learning_rate: 0.00002  # Much lower than pretraining (typically 1/10th)
+  max_steps: 10000    # Fewer steps than pretraining
+  warmup_steps: 500   # Shorter warmup
+  eval_interval: 500  # More frequent evaluation
+  save_interval: 1000 # Save checkpoints regularly
+  save_dir: "/media/beijing/checkpoints/mini_chat_gpt/sft"
+  resume_from: null   # Path to SFT checkpoint to resume from
+
+# Model configuration (should match pretrained model)
+model:
+  dim: 768
+  n_layers: 12
+  n_heads: 12
+  max_seq_len: 1024
+  mlp_ratio: 4.0
+
+# Training configuration (adapted for SFT)
+training:
+  batch_size: 4       # Smaller batch size for longer sequences
+  weight_decay: 0.01  # Lower weight decay for fine-tuning
+  beta1: 0.9
+  beta2: 0.95
+  grad_clip: 1.0
+
+# Data configuration
+data:
+  seq_len: 1024      # Keep same as pretraining
+  num_workers: 4     # Reduce if memory issues
+
+# System configuration
+system:
+  device: "cuda"
+  multi_gpu: false   # Start with single GPU for SFT
+  compile: true      # Keep compilation for speed
+  mixed_precision: true
+  seed: 42
+
+# WandB logging
+wandb:
+  enabled: true
+  project: "tinystories-sft"
+  name: "sft-instruct-v1" 
