@@ -242,7 +242,7 @@ class GPT(nn.Module):
             return logits, None
     
     @torch.no_grad()
-    def generate(self, idx: torch.Tensor, max_new_tokens: int, temperature: float = 1.0, top_k: Optional[int] = None) -> torch.Tensor:
+    def generate(self, idx: torch.Tensor, max_new_tokens: int, temperature: float = 1.0, top_k: Optional[int] = None, stop_tokens: Optional[list] = None) -> torch.Tensor:
         """Generate tokens autoregressively."""
         for _ in range(max_new_tokens):
             # Crop sequence if needed
@@ -261,6 +261,17 @@ class GPT(nn.Module):
             probs = F.softmax(logits, dim=-1)
             idx_next = torch.multinomial(probs, num_samples=1)
             idx = torch.cat((idx, idx_next), dim=1)
+            
+            # Check for stop tokens
+            if stop_tokens is not None:
+                # Get the last generated token for each sequence in the batch
+                last_tokens = idx_next.squeeze(-1)  # Shape: (batch_size,)
+                
+                # Check if any of the last tokens are stop tokens
+                for stop_token in stop_tokens:
+                    if torch.any(last_tokens == stop_token):
+                        # Stop generation if any sequence hits a stop token
+                        return idx
         
         return idx
     

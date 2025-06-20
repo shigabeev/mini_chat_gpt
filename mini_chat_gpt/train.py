@@ -18,8 +18,8 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 import wandb
 
-from .model import create_model, GPT
-from .dataloader import create_dataloader, InfiniteDataLoader, get_batch
+from mini_chat_gpt.model import create_model, GPT
+from mini_chat_gpt.dataloader import create_dataloader, InfiniteDataLoader, get_batch
 
 
 def setup_ddp():

@@ -28,11 +28,7 @@ A clean, minimal implementation of GPT-2 (~100M parameters) for pretraining on t
 git clone <repo-url>
 cd mini_chat_gpt
 
-# Install dependencies
-pip install -r requirements.txt
-
-# Optional: Install FlashAttention for better performance
-pip install flash-attn --no-build-isolation
+pip install -e .
 ```
 
 ### 2. Training
@@ -40,13 +36,13 @@ pip install flash-attn --no-build-isolation
 Start training with default hyperparameters:
 
 ```bash
-python train.py
+python mini_chat_gpt/train.py
 ```
 
 For multi-GPU training (automatically detects available GPUs):
 
 ```bash
-python train.py system.multi_gpu=true training.batch_size=16
+python mini_chat_gpt/train.py system.multi_gpu=true training.batch_size=16
 ```
 
 The script will automatically:
@@ -62,13 +58,13 @@ Modify `config.yaml` or override parameters:
 
 ```bash
 # Train with different batch size
-python train.py training.batch_size=16
+python mini_chat_gpt/train.py training.batch_size=16
 
 # Use different learning rate
-python train.py training.learning_rate=1e-4
+python mini_chat_gpt/train.py training.learning_rate=1e-4
 
 # Resume from checkpoint
-python train.py checkpointing.resume_from=./checkpoints/checkpoint_step_10000.pt
+python mini_chat_gpt/train.py checkpointing.resume_from=./checkpoints/checkpoint_step_10000.pt
 ```
 
 ### 4. Text Generation
@@ -76,7 +72,7 @@ python train.py checkpointing.resume_from=./checkpoints/checkpoint_step_10000.pt
 Generate text using a trained model:
 
 ```bash
-python generate.py --checkpoint ./checkpoints/best_model.pt --prompt "Once upon a time"
+python mini_chat_gpt/generate.py --checkpoint ./checkpoints/best_model.pt --prompt "Once upon a time"
 ```
 
 ## Model Architecture
@@ -112,8 +108,7 @@ The implementation is optimized for training efficiency:
 - **Efficient Data Loading**: Memory-mapped tokenized data
 
 Expected training time:
-- Single RTX 4090: ~24 hours for 100k steps
-- Dual RTX 4090: ~12 hours for 100k steps
+- Single RTX 4090: ~6 hours for 100k steps
 
 ## File Structure
 
@@ -196,4 +191,3 @@ filled with colorful flowers and friendly animals..."
 
 - Inspired by Andrej Karpathy's educational code style
 - Built on the TinyStories dataset by Microsoft Research
-- Uses modern techniques from recent transformer research 
