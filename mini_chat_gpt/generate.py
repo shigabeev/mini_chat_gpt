@@ -9,7 +9,7 @@ from model import GPT
 
 def load_model(checkpoint_path: str, device: str = "cuda") -> tuple[GPT, tiktoken.Encoding]:
     """Load trained model from checkpoint."""
-    checkpoint = torch.load(checkpoint_path, map_location=device)
+    checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
     config = checkpoint['config']
     
     # Create model
@@ -21,7 +21,19 @@ def load_model(checkpoint_path: str, device: str = "cuda") -> tuple[GPT, tiktoke
         max_seq_len=config['max_seq_len'],
     )
     
-    model.load_state_dict(checkpoint['model_state_dict'])
+    # Handle state dict keys that may have _orig_mod. prefix from torch.compile
+    state_dict = checkpoint['model_state_dict']
+    new_state_dict = {}
+    
+    for key, value in state_dict.items():
+        # Remove _orig_mod. prefix if present (from torch.compile)
+        if key.startswith('_orig_mod.'):
+            new_key = key[len('_orig_mod.'):]
+        else:
+            new_key = key
+        new_state_dict[new_key] = value
+    
+    model.load_state_dict(new_state_dict)
     model.to(device)
     model.eval()
     

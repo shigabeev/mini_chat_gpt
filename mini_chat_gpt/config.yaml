@@ -1,0 +1,40 @@
+# GPT Training Configuration
+model:
+  dim: 768
+  n_layers: 12
+  n_heads: 12
+  max_seq_len: 1024
+  mlp_ratio: 4.0
+
+training:
+  batch_size: 16  # Increased for multi-GPU training
+  learning_rate: 3e-4
+  weight_decay: 0.1
+  beta1: 0.9
+  beta2: 0.95
+  grad_clip: 1.0
+  warmup_steps: 2000
+  max_steps: 100000 # 500 000 000 tokens * 6 epochs / 32 batch size / 1024 sequence length
+  eval_interval: 1000
+  save_interval: 1000
+  
+data:
+  data_path: "./TinyStories/data"
+  seq_len: 1024
+  num_workers: 8  # Increased for multi-GPU
+
+system:
+  device: "cuda"
+  multi_gpu: true  # Enable multi-GPU training
+  compile: true
+  mixed_precision: true  # Use torch.autocast for lower precision
+  seed: 42
+  
+checkpointing:
+  save_dir: "/media/beijing/checkpoints/mini_chat_gpt/pt"
+  resume_from: null  # Path to checkpoint to resume from
+
+wandb:
+  enabled: true
+  project: "tinystories-gpt"
+  name: "gpt-100m-multigpu" 
