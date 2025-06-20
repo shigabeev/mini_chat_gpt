@@ -10,7 +10,7 @@ import tempfile
 import os
 import shutil
 from unittest.mock import patch, mock_open
-from dataloader import TinyStoriesDataset, create_dataloader, InfiniteDataLoader, get_batch
+from mini_chat_gpt.dataloader import TinyStoriesDataset, create_dataloader, InfiniteDataLoader, get_batch
 
 
 class TestTinyStoriesDataset:
@@ -301,7 +301,7 @@ class TestMultiGPUCompatibility:
         tokens = np.arange(1000, dtype=np.uint32)
         tokens.tofile(tmp_path / "data" / "tinystories_train.bin")
         
-        from model import create_model
+        from mini_chat_gpt.model import create_model
         
         # Create model and dataloader
         dataloader, vocab_size = create_dataloader(
@@ -331,7 +331,7 @@ class TestMultiGPUCompatibility:
         tokens = np.arange(2000, dtype=np.uint32)
         tokens.tofile(tmp_path / "data" / "tinystories_train.bin")
         
-        from model import create_model
+        from mini_chat_gpt.model import create_model
         
         # Large batch size that will be split across GPUs
         batch_size = 16
@@ -433,7 +433,7 @@ class TestDataLoaderIntegration:
             str(tmp_path / "data"), batch_size=4, seq_len=32, train=True, num_workers=0
         )
         
-        from model import create_model
+        from mini_chat_gpt.model import create_model
         
         model = create_model(vocab_size)
         optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)

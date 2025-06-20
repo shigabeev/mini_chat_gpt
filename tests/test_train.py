@@ -15,9 +15,9 @@ from unittest.mock import patch, MagicMock
 from omegaconf import DictConfig, OmegaConf
 import wandb
 
-from train import get_lr, estimate_loss, save_checkpoint, load_checkpoint
-from model import create_model, GPT
-from dataloader import create_dataloader, InfiniteDataLoader, get_batch
+from mini_chat_gpt.train import get_lr, estimate_loss, save_checkpoint, load_checkpoint
+from mini_chat_gpt.model import create_model, GPT
+from mini_chat_gpt.dataloader import create_dataloader, InfiniteDataLoader, get_batch
 
 # Setup device for testing
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"

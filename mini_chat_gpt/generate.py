@@ -4,7 +4,7 @@ Text generation script using trained GPT model.
 
 import torch
 import tiktoken
-from model import GPT
+from .model import GPT
 
 
 def load_model(checkpoint_path: str, device: str = "cuda") -> tuple[GPT, tiktoken.Encoding]:

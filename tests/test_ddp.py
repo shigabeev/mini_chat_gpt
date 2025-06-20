@@ -9,13 +9,13 @@ import hydra
 from omegaconf import DictConfig
 
 # Import our training functions
-from train import setup_ddp, cleanup_ddp, is_main_process
-from model import create_model
-from dataloader import create_dataloader, InfiniteDataLoader, get_batch
+from mini_chat_gpt.train import setup_ddp, cleanup_ddp, is_main_process
+from mini_chat_gpt.model import create_model
+from mini_chat_gpt.dataloader import create_dataloader, InfiniteDataLoader, get_batch
 
 
 @hydra.main(version_base=None, config_path=".", config_name="config")
-def test_ddp(cfg: DictConfig) -> None:
+def run_ddp_test(cfg: DictConfig) -> None:
     """Test DDP setup with a few training steps."""
     
     # Setup DDP
@@ -87,4 +87,4 @@ def test_ddp(cfg: DictConfig) -> None:
 
 
 if __name__ == "__main__":
-    test_ddp() 
+    run_ddp_test() 

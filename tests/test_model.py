@@ -10,7 +10,7 @@ import torch.nn as nn
 import numpy as np
 from typing import Tuple
 
-from model import (
+from mini_chat_gpt.model import (
     precompute_freqs_cis,
     apply_rotary_emb,
     SwiGLU,
@@ -492,7 +492,7 @@ class TestModelSerialization:
     
     def test_save_and_load_checkpoint_basic(self, tmp_path):
         """Test basic checkpoint save and load functionality."""
-        from train import save_checkpoint, load_checkpoint
+        from mini_chat_gpt.train import save_checkpoint, load_checkpoint
         
         # Create model and optimizer
         vocab_size = 1000
@@ -534,7 +534,7 @@ class TestModelSerialization:
     
     def test_checkpoint_contains_correct_metadata(self, tmp_path):
         """Test that checkpoint contains all necessary metadata."""
-        from train import save_checkpoint
+        from mini_chat_gpt.train import save_checkpoint
         
         vocab_size = 500
         model = create_model(vocab_size).to(DEVICE)
@@ -570,7 +570,7 @@ class TestModelSerialization:
     
     def test_load_checkpoint_preserves_model_behavior(self, tmp_path):
         """Test that loaded model behaves identically to original."""
-        from train import save_checkpoint, load_checkpoint
+        from mini_chat_gpt.train import save_checkpoint, load_checkpoint
         
         vocab_size = 1000
         model1 = create_model(vocab_size).to(DEVICE)
@@ -608,7 +608,7 @@ class TestModelSerialization:
     
     def test_checkpoint_different_device_loading(self, tmp_path):
         """Test loading checkpoint works across different devices."""
-        from train import save_checkpoint, load_checkpoint
+        from mini_chat_gpt.train import save_checkpoint, load_checkpoint
         
         vocab_size = 500
         model = create_model(vocab_size).to(DEVICE)
@@ -638,7 +638,7 @@ class TestModelSerialization:
     
     def test_checkpoint_optimizer_state_preservation(self, tmp_path):
         """Test that optimizer state is properly preserved."""
-        from train import save_checkpoint, load_checkpoint
+        from mini_chat_gpt.train import save_checkpoint, load_checkpoint
         
         vocab_size = 300
         model = create_model(vocab_size).to(DEVICE)
@@ -680,7 +680,7 @@ class TestModelSerialization:
     
     def test_checkpoint_file_format_compatibility(self, tmp_path):
         """Test checkpoint file format is standard PyTorch format."""
-        from train import save_checkpoint
+        from mini_chat_gpt.train import save_checkpoint
         
         vocab_size = 200
         model = create_model(vocab_size).to(DEVICE)
@@ -709,7 +709,7 @@ class TestModelSerialization:
     
     def test_multiple_checkpoint_saves(self, tmp_path):
         """Test saving multiple checkpoints doesn't interfere."""
-        from train import save_checkpoint, load_checkpoint
+        from mini_chat_gpt.train import save_checkpoint, load_checkpoint
         
         vocab_size = 400
         model = create_model(vocab_size).to(DEVICE)
@@ -737,8 +737,8 @@ class TestModelSerialization:
     
     def test_generation_script_compatibility(self, tmp_path):
         """Test that saved checkpoints work with generate.py script."""
-        from train import save_checkpoint
-        from generate import load_model
+        from mini_chat_gpt.train import save_checkpoint
+        from mini_chat_gpt.generate import load_model
         import tiktoken
         
         tokenizer = tiktoken.get_encoding("gpt2")
@@ -827,7 +827,7 @@ class TestMultiGPUCompatibility:
         if torch.cuda.device_count() < 2:
             pytest.skip("Multi-GPU tests require at least 2 GPUs")
         
-        from train import save_checkpoint, load_checkpoint
+        from mini_chat_gpt.train import save_checkpoint, load_checkpoint
         
         vocab_size = 800
         model = create_model(vocab_size).to(DEVICE)
